@@ -16,7 +16,6 @@ pub use path::Path;
 use path::PathElement;
 use state_tree::ResolvedPath;
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::error::Error;
 use std::time;
 pub use value::{Conflicts, Cursor, Primitive, Value};
@@ -64,7 +63,11 @@ impl FrontendState {
     /// Apply a patch received from the backend to this frontend state,
     /// returns the updated cached value (if it has changed) and a new
     /// `FrontendState` which replaces this one
-    fn apply_remote_patch(self, self_actor: &ActorId, patch: &Patch) -> Result<Self, InvalidPatch> {
+    fn apply_remote_patch(
+        self,
+        self_actor: &ActorId,
+        patch: &Patch,
+    ) -> Result<Self, InvalidPatch> {
         match self {
             FrontendState::WaitingForInFlightRequests {
                 in_flight_requests,
@@ -91,7 +94,8 @@ impl FrontendState {
                         }
                         // unwrap should be fine here as `in_flight_requests` should never have zero length
                         // because we transition to reconciled state when that happens
-                        let (_, remaining_requests) = new_in_flight_requests.split_first().unwrap();
+                        let (_, remaining_requests) =
+                            new_in_flight_requests.split_first().unwrap();
                         new_in_flight_requests = remaining_requests.iter().copied().collect();
                     }
                 }
@@ -415,14 +419,12 @@ impl Frontend {
 }
 
 fn system_time() -> Option<i64> {
-    // TODO note this can fail as SystemTime is not monotonic, also
-    // it's a system call so it's not no_std compatible. Finally,
-    // it doesn't handle system times before 1970 (which should be
-    // very rare one imagines).
-    time::SystemTime::now()
-        .duration_since(time::UNIX_EPOCH)
-        .ok()
-        .and_then(|d| i64::try_from(d.as_millis()).ok())
+    let ts = chrono::offset::Utc::now().timestamp_millis();
+    if ts < 0 {
+        None
+    } else {
+        Some(ts)
+    }
 }
 
 struct OptimisticChangeResult {
