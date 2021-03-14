@@ -17,7 +17,6 @@ use path::PathElement;
 use state_tree::ResolvedPath;
 use std::collections::HashMap;
 use std::error::Error;
-use std::time;
 pub use value::{Conflicts, Cursor, Primitive, Value};
 
 /// Tracks the possible states of the frontend
